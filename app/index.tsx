@@ -81,6 +81,12 @@ export default function Index() {
           <TouchableOpacity onPress={handleSignIn}>
             <Text style={styles.signInText}>Already have an account? <Text style={{fontWeight: 'bold'}}>Log In</Text></Text>
           </TouchableOpacity>
+          
+          {/* 🔵 Test Bluetooth Button */}
+          <TouchableOpacity style={styles.testButton} onPress={() => router.push('/(bluetooth)/BluetoothConnection')}>
+            <Text style={styles.testButtonText}>Test Bluetooth</Text>
+          </TouchableOpacity>
+          
         </BlurView>
 
       </Animated.View>
@@ -158,4 +164,19 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 14,
   },
+
+  testButton: {
+  width: '100%',
+  backgroundColor: '#3B82F6',
+  paddingVertical: 14,
+  borderRadius: 15,
+  alignItems: 'center',
+  marginTop: 10,
+},
+testButtonText: {
+  color: '#FFFFFF',
+  fontSize: 15,
+  fontWeight: '600',
+},
+
 });

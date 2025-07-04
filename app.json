@@ -16,9 +16,17 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package":"com.slimiot.ring",
+      "package": "com.slimiot.ring",
       "backgroundColor": "#02041A",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,13 +48,18 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to your Ring.",
-          "bluetoothPeripheralPermission": "Allow $(PRODUCT_NAME) to find and connect to your Ring."
+          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to your Ring."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d1fd3773-0ba3-4a6c-8749-bc82aca45cc2"
+      }
     }
   }
 }
