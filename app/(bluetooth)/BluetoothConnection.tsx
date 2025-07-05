@@ -1,127 +1,200 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { Device } from 'react-native-ble-plx';
-import { useBluetooth } from '../../contexts/BluetoothProvider'; // Use the hook from our new context
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const BluetoothConnectionScreen = () => {
-  const {
-    scannedDevices,
-    connectedDevice,
-    connectionStatus,
-    requestPermissions,
-    startScan,
-    stopScan,
-    connectToDevice,
-    disconnectDevice,
-  } = useBluetooth();
-  const [isScanning, setIsScanning] = useState(false);
+// Increased circle count for a richer effect
+const CIRCLE_COUNT = 4; 
+const CIRCLE_SIZE = 250; // Slightly larger for more presence
 
-  const handleScan = async () => {
-    const permissionsGranted = await requestPermissions();
-    if (permissionsGranted) {
-      setIsScanning(true);
-      startScan();
-      // Stop scanning after 10 seconds to save battery
-      setTimeout(() => {
-        stopScan();
-        setIsScanning(false);
-      }, 10000);
-    } else {
-      Alert.alert('Permissions Required', 'Bluetooth permissions are required to scan for devices.');
-    }
+export default function ConnectLandingScreen() {
+  const router = useRouter();
+  const animatedValues = useRef([...Array(CIRCLE_COUNT)].map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    // Create a staggered, looping animation for each circle
+    const animations = animatedValues.map((value) => {
+      return Animated.loop(
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 4000, // Slower duration for a breathing effect
+          useNativeDriver: true,
+        })
+      );
+    });
+
+    // Stagger the start of each animation to create a ripple effect
+    Animated.stagger(1000, animations).start();
+  }, [animatedValues]);
+
+  const handleScanPress = () => {
+    router.push('/(bluetooth)/BluetoothScan');
   };
-
-  const renderDeviceItem = ({ item }: { item: Device }) => (
-    <TouchableOpacity style={styles.deviceItem} onPress={() => connectToDevice(item)}>
-      <Ionicons name="bluetooth-outline" size={24} color="#FFF" />
-      <View style={styles.deviceInfo}>
-        <Text style={styles.deviceText}>{item.name || 'Unknown Device'}</Text>
-        <Text style={styles.deviceId}>{item.id}</Text>
-      </View>
-      <Text style={styles.deviceTextRssi}>RSSI: {item.rssi}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#1D244D', '#02041A', '#1A1D3E']} style={styles.gradientBackground} />
+      <LinearGradient
+        colors={['#1D244D', '#02041A', '#1A1D3E']}
+        style={styles.gradientBackground}
+      />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Connect Your Ring</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerIconContainer}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerText}>Connect Your Ring</Text>
+        <View style={styles.headerIconContainer} />
       </View>
 
-      {connectedDevice ? (
-        <View style={styles.statusContainer}>
-          <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
-          <Text style={styles.statusText}>Connected to</Text>
-          <Text style={styles.deviceName}>{connectedDevice.name}</Text>
-          <TouchableOpacity style={styles.button} onPress={disconnectDevice}>
-            <Text style={styles.buttonText}>Disconnect</Text>
-          </TouchableOpacity>
+      {/* Main Content */}
+      <View style={styles.content}>
+        <Text style={styles.instructionText}>
+          Turn on your SLIMiot Ring and make sure that Bluetooth is enabled on your device.
+        </Text>
+
+        {/* Concentric Circle Animation */}
+        <View style={styles.animationContainer}>
+          {animatedValues.map((value, index) => {
+            // Scale from 0% to 100%
+            const scale = value.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1],
+            });
+            // Fade in and then fade out for a "breathing" effect
+            const opacity = value.interpolate({
+              inputRange: [0, 0.2, 1],
+              outputRange: [0, 0.4, 0],
+            });
+
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.circle,
+                  {
+                    backgroundColor: `rgba(74, 144, 226, ${0.3 - index * 0.05})`,
+                    transform: [{ scale }],
+                    opacity,
+                  },
+                ]}
+              />
+            );
+          })}
+          {/* Central Icon Container */}
+          <View style={styles.iconContainer}>
+            <Ionicons name="bluetooth" size={80} color="rgba(74, 144, 226, 0.9)" />
+          </View>
         </View>
-      ) : (
-        <>
-          <TouchableOpacity style={styles.button} onPress={handleScan} disabled={isScanning || connectionStatus === 'connecting'}>
-            {isScanning || connectionStatus === 'connecting' ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>Scan for Devices</Text>
-            )}
+      </View>
+
+      {/* Glass UI Actions Section */}
+      <View style={styles.footer}>
+        <BlurView intensity={25} tint="dark" style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleScanPress}>
+            <Text style={styles.primaryButtonText}>Scan</Text>
           </TouchableOpacity>
-          <FlatList
-            data={scannedDevices}
-            renderItem={renderDeviceItem}
-            keyExtractor={item => item.id}
-            style={styles.list}
-            ListEmptyComponent={<Text style={styles.emptyText}>No devices found. Make sure your device is nearby and in pairing mode.</Text>}
-          />
-        </>
-      )}
+          <TouchableOpacity>
+            <Text style={styles.secondaryText}>No SLIMiot ring yet? <Text style={{ fontWeight: 'bold' }}>Buy Now</Text></Text>
+          </TouchableOpacity>
+        </BlurView>
+      </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  gradientBackground: { position: 'absolute', left: 0, right: 0, top: 0, height: '100%' },
-  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#FFF', textAlign: 'center' },
-  button: {
-    backgroundColor: 'rgba(74, 144, 226, 0.8)',
-    padding: 15,
-    borderRadius: 10,
-    margin: 20,
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    backgroundColor: '#02041A',
   },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  list: { flex: 1 },
-  deviceItem: {
+  gradientBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '100%',
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    marginHorizontal: 20,
-    marginVertical: 5,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingTop: Platform.OS === 'android' ? 50 : 0,
+    paddingBottom: 10,
   },
-  deviceInfo: { marginLeft: 15, flex: 1 },
-  deviceText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  deviceId: { color: '#AAA', fontSize: 12 },
-  deviceTextRssi: { color: '#AAA', fontSize: 14 },
-  emptyText: { color: '#AAA', textAlign: 'center', marginTop: 50, paddingHorizontal: 20 },
-  statusContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  statusText: { color: '#FFF', fontSize: 18, marginTop: 20 },
-  deviceName: { color: '#4A90E2', fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+  headerIconContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    color: '#FFF',
+    fontSize: 26,
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  instructionText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    position: 'absolute',
+    top: 40,
+  },
+  animationContainer: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circle: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    position: 'absolute',
+  },
+  iconContainer: {
+    // This container ensures the icon is treated as a single block for centering
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
+  },
+  actionsContainer: {
+    width: '100%',
+    padding: 20,
+    borderRadius: 30,
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  primaryButton: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  primaryButtonText: {
+    color: '#1D244D',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+  },
 });
-
-export default BluetoothConnectionScreen;
