@@ -73,6 +73,8 @@ export default function Index() {
           <Text style={styles.tagline}>"Smart rings for a Smarter You"</Text>
         </View>
 
+        
+
         {/* Glass UI Actions Section */}
         <BlurView intensity={25} tint="dark" style={styles.actionsContainer}>
           <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
@@ -83,11 +85,15 @@ export default function Index() {
           </TouchableOpacity>
           
           {/* 🔵 Test Bluetooth Button */}
-          <TouchableOpacity style={styles.testButton} onPress={() => router.push('/(bluetooth)/BluetoothConnection')}>
+          {/* <TouchableOpacity style={styles.testButton} onPress={() => router.push('/(bluetooth)/BluetoothConnection')}>
             <Text style={styles.testButtonText}>Test Bluetooth</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           
         </BlurView>
+
+        <TouchableOpacity style={styles.tagline} onPress={() => router.push('/(bluetooth)/BluetoothConnection')}>
+            <Text style={styles.tagline}>Test Bluetooth</Text>
+          </TouchableOpacity>
 
       </Animated.View>
     </View>
