@@ -5,19 +5,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    LayoutAnimation,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    SectionList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    UIManager,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  LayoutAnimation,
+  PermissionsAndroid,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  SectionList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  UIManager,
+  View,
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 
@@ -28,6 +29,21 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const PREVIOUS_DEVICES_KEY = '@slimiot_previous_devices';
 const bleManager = new BleManager();
+
+// Permission request helper
+const requestBlePermissions = async () => {
+  if (Platform.OS === 'android') {
+    const permissions = [
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    ];
+    const granted = await PermissionsAndroid.requestMultiple(permissions);
+    const allGranted = Object.values(granted).every(val => val === PermissionsAndroid.RESULTS.GRANTED);
+    return allGranted;
+  }
+  return true;
+};
 
 export default function BluetoothScanScreen() {
   const router = useRouter();
@@ -92,8 +108,14 @@ export default function BluetoothScanScreen() {
     return () => animation.stop();
   }, [isScanning, rotation]);
 
-  const startScan = () => {
+  const startScan = async () => {
     if (isScanning) return;
+
+    const hasPermission = await requestBlePermissions();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Bluetooth permissions are required to scan for devices.');
+      return;
+    }
 
     bleManager.state().then(state => {
       if (state !== 'PoweredOn') {
@@ -270,7 +292,7 @@ export default function BluetoothScanScreen() {
         ListEmptyComponent={
           <View style={styles.scanningContainer}>
             <Text style={styles.scanningText}>
-              {isScanning ? 'Scanning for SLIMiot Rings...' : 'No devices found.'}
+              {isScanning ? 'Scanning for Dozemate devices...' : 'No devices found.'}
             </Text>
           </View>
         }

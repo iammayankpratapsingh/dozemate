@@ -22,8 +22,8 @@ export default function SignUpScreen() {
 
   const handleAgree = () => {
     // Navigate to the next step of the sign-up process
-    // You will need to create this file: signup-details.tsx
-    router.push('/(authentication)/signup-details');
+    // You will need to create this file: signupdetails.tsx
+    router.push('/(authentication)/signupdetails');
   };
 
   return (
@@ -59,7 +59,7 @@ export default function SignUpScreen() {
         <TouchableOpacity style={styles.agreeButton} onPress={handleAgree}>
           <Text style={styles.agreeButtonText}>Agree & Continue</Text>
         </TouchableOpacity>
-        <Text style={styles.footerText}>Slimiot Ring Account</Text>
+        <Text style={styles.footerText}>Slimiot Dozemate Account</Text>
         <Text style={styles.copyrightText}>Copyright © {currentYear}</Text>
       </View>
     </View>

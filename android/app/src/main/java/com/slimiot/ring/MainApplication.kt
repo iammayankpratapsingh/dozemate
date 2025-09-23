@@ -1,4 +1,4 @@
-package com.slimiot.ring
+package com.slimiot.dozemate
 
 import android.app.Application
 import android.content.res.Configuration

@@ -5,17 +5,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import CustomAlert from '../../components/CustomAlert';
 
@@ -34,7 +34,9 @@ export default function SignInScreen() {
   const [modalInfo, setModalInfo] = useState({ title: '', message: '', isSuccess: false });
 
   // API endpoint from your Java code
-  const LOGIN_URL = "http://byosense.com/hexaskin_db/login.php";
+  const LOGIN_URL = "https://admin.dozemate.com/api/auth/login";
+  // Role is required by API; keep UI unchanged, default to 'user'
+  const USER_ROLE = 'user';
 
   const triggerModal = (title: string, message:string, isSuccess = false) => {
     setModalInfo({ title, message, isSuccess });
@@ -49,39 +51,66 @@ export default function SignInScreen() {
 
     setIsLoading(true);
 
+    // Payload per new format: { email, password, role }
+    const payload = {
+      email: email.trim(),
+      password: password.trim(),
+      role: USER_ROLE,
+    };
+
+    // Debug: outgoing request
+    console.log("[Auth] Sending POST", LOGIN_URL, "with payload:", { ...payload, password: "********" });
+
     try {
       const response = await fetch(LOGIN_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          Password: password.trim(),
-          remember_me: rememberMe ? "1" : "0",
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
+      const result: any = await response.json();
 
-      if (result.status === 'success' && result.valid === '1') {
-        if (result.emailverified === '1') {
-          await AsyncStorage.setItem('session_token', result.hash);
-          await AsyncStorage.setItem('user_email', email.trim());
-          if (rememberMe) {
-            await AsyncStorage.setItem('remember_me', 'true');
-          } else {
-            await AsyncStorage.removeItem('remember_me');
-          }
-          triggerModal("Success", "Login successful!", true);
+      // Debug: incoming response
+      console.log("[Auth] Response status:", response.status);
+      console.log("[Auth] Response body:", result);
+
+      if (response.ok && result?.status === 'success' && result?.token && result?.user) {
+        // Extract required fields
+        const token = String(result.token);
+        const userId = String(result.user?.id ?? '');
+        const userEmail = String(result.user?.email ?? '');
+        const userName = String(result.user?.name ?? '');
+
+        // Persist to AsyncStorage (Android local storage)
+        await AsyncStorage.multiSet([
+          ['auth_token', token],
+          ['user_id', userId],
+          ['user_email', userEmail],
+          ['user_name', userName],
+        ]);
+
+        if (rememberMe) {
+          await AsyncStorage.setItem('remember_me', 'true');
         } else {
-          triggerModal("Verification Needed", "Please verify your email before logging in.");
+          await AsyncStorage.removeItem('remember_me');
         }
+
+        // Debug: what was saved
+        console.log("[Auth] Saved to storage:", {
+          auth_token: token,
+          user_id: userId,
+          user_email: userEmail,
+          user_name: userName,
+          remember_me: rememberMe ? 'true' : 'false',
+        });
+
+        router.replace('/(authentication)/signinResults?ok=1');
       } else {
-        triggerModal("Login Failed", result.message || "Invalid credentials or server error.");
+        const msg = result?.message || "Invalid credentials or server error.";
+        triggerModal("Login Failed", msg);
       }
-    } catch (error) {
-      console.error("Login API Error:", error);
+    } catch (error: any) {
+      console.error("[Auth] Network/Error:", error);
       triggerModal("Network Error", "An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -162,9 +191,9 @@ export default function SignInScreen() {
               <MaterialCommunityIcons name={rememberMe ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color="#FFFFFF" />
               <Text style={styles.checkboxLabel}>Remember Me</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(authentication)/forgotpassword')}>
+            {/* <TouchableOpacity onPress={() => router.push('/(authentication)/forgotpassword')}>
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>

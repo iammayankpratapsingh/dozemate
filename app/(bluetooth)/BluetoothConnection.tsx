@@ -52,7 +52,7 @@ export default function ConnectLandingScreen() {
       {/* Main Content */}
       <View style={styles.content}>
         <Text style={styles.instructionText}>
-          Turn on your SLIMiot Ring and make sure that Bluetooth is enabled on your device.
+          Turn on your SLIMiot Dozemate and make sure that Bluetooth is enabled on your device.
         </Text>
 
         {/* Concentric Circle Animation */}
@@ -97,7 +97,7 @@ export default function ConnectLandingScreen() {
             <Text style={styles.primaryButtonText}>Scan</Text>
           </TouchableOpacity>
           <TouchableOpacity>
-            <Text style={styles.secondaryText}>No SLIMiot ring yet? <Text style={{ fontWeight: 'bold' }}>Buy Now</Text></Text>
+            <Text style={styles.secondaryText}>No SLIMiot Dozemate yet? <Text style={{ fontWeight: 'bold' }}>Buy Now</Text></Text>
           </TouchableOpacity>
         </BlurView>
       </View>

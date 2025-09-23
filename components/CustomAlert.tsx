@@ -19,14 +19,20 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ visible, title, message, onCl
       transparent={true}
       visible={visible}
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
-      <BlurView intensity={30} tint="dark" style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>{title}</Text>
-          <Text style={styles.modalMessage}>{message}</Text>
-          <TouchableOpacity style={styles.modalButton} onPress={onClose}>
-            <Text style={styles.modalButtonText}>OK</Text>
-          </TouchableOpacity>
+      {/* Full screen blur overlay */}
+      <BlurView intensity={1000} tint="dark" style={styles.fullScreenBlur}>
+        {/* Additional dark overlay for better contrast */}
+        <View style={styles.darkOverlay}>
+          {/* Modal container */}
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <Text style={styles.modalMessage}>{message}</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={onClose}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </BlurView>
     </Modal>
@@ -34,14 +40,29 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ visible, title, message, onCl
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  fullScreenBlur: {
     flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  darkOverlay: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   modalContainer: {
     width: width * 0.85,
-    backgroundColor: 'rgba(30, 40, 77, 0.7)',
+    maxWidth: 400,
+    backgroundColor: '#070a2aff',
     borderRadius: 25,
     padding: 25,
     alignItems: 'center',
@@ -55,6 +76,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 20,
     elevation: 10,
+    // Ensure the modal itself is not blurred
+    zIndex: 1000,
   },
   modalTitle: {
     fontSize: 22,
@@ -64,7 +87,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: 15,
     color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
     marginBottom: 25,
@@ -76,6 +99,14 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 15,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   modalButtonText: {
     color: '#1D244D',

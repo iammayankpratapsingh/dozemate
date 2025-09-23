@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Slimiot-Ring",
-    "slug": "Slimiot-Ring",
+    "name": "Dozemate",
+    "slug": "Dozemate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "slimiotring",
+    "scheme": "dozemate",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.slimiot.ring",
+      "package": "com.slimiot.dozemate",
       "backgroundColor": "#02041A",
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -25,7 +25,11 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_STATE",
+        "android.permission.NEARBY_WIFI_DEVICES"
       ]
     },
     "web": {
@@ -48,9 +52,10 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to your Ring."
+          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to your Dozemate."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

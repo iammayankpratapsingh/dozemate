@@ -46,7 +46,7 @@ export default function ConnectionSuccessScreen() {
         <Animated.View style={{ opacity: opacityAnim }}>
           <Text style={styles.title}>Connected!</Text>
           <Text style={styles.subtitle}>
-            Your <Text style={{ fontWeight: 'bold' }}>{deviceName || 'SLIMiot Ring'}</Text> is ready.
+            Your <Text style={{ fontWeight: 'bold' }}>{deviceName || 'SLIMiot Dozemate'}</Text> is ready.
           </Text>
         </Animated.View>
       </View>

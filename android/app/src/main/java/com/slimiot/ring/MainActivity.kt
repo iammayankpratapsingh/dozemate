@@ -1,4 +1,4 @@
-package com.slimiot.ring
+package com.slimiot.dozemate
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
