@@ -21,11 +21,46 @@ async function getLocationModule() {
 
 export async function ensureWifiScanPermissions(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  const Location = await getLocationModule();
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') throw new Error('Location permission is required to scan Wi‑Fi.');
-  const providers = await Location.getProviderStatusAsync();
-  if (!providers.locationServicesEnabled) throw new Error('Location service is turned off');
+  
+  try {
+    const Location = await getLocationModule();
+    
+    // Request permissions with retry logic
+    let permissionStatus = 'undetermined';
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (permissionStatus !== 'granted' && attempts < maxAttempts) {
+      attempts++;
+      console.log(`[WiFi] Requesting location permissions (attempt ${attempts}/${maxAttempts})`);
+      
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      permissionStatus = status;
+      
+      if (status === 'granted') {
+        console.log('[WiFi] Location permissions granted');
+        break;
+      } else if (attempts < maxAttempts) {
+        console.log(`[WiFi] Permission denied, retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    if (permissionStatus !== 'granted') {
+      throw new Error('Location permission is required to scan Wi‑Fi. Please enable it in Settings.');
+    }
+    
+    // Check if location services are enabled
+    const providers = await Location.getProviderStatusAsync();
+    if (!providers.locationServicesEnabled) {
+      throw new Error('Location service is turned off. Please enable Location Services in Settings.');
+    }
+    
+    console.log('[WiFi] All permissions and services verified');
+  } catch (error) {
+    console.error('[WiFi] Permission check failed:', error);
+    throw error;
+  }
 }
 
 function coerceToArray(raw: unknown): any[] {
@@ -44,19 +79,47 @@ function coerceToArray(raw: unknown): any[] {
 
 export async function scanWifi(): Promise<ScannedNetwork[]> {
   if (Platform.OS === 'ios') return [];
-  await ensureWifiScanPermissions();
+  
+  try {
+    await ensureWifiScanPermissions();
+  } catch (error) {
+    console.error('[WiFi] Permission check failed:', error);
+    throw error;
+  }
 
   let raw: unknown;
-  try {
-    raw = await WifiManager.reScanAndLoadWifiList();
-  } catch (e) {
-    console.warn('[WiFi] reScanAndLoadWifiList failed, trying loadWifiList():', e);
+  let scanAttempts = 0;
+  const maxScanAttempts = 3;
+  
+  // Retry scanning with exponential backoff
+  while (scanAttempts < maxScanAttempts) {
+    scanAttempts++;
+    console.log(`[WiFi] Scanning attempt ${scanAttempts}/${maxScanAttempts}`);
+    
     try {
-      // @ts-ignore optional on some versions
-      raw = await WifiManager.loadWifiList?.();
-    } catch (e2) {
-      console.error('[WiFi] loadWifiList failed:', e2);
-      return [];
+      raw = await WifiManager.reScanAndLoadWifiList();
+      console.log('[WiFi] reScanAndLoadWifiList successful');
+      break;
+    } catch (e) {
+      console.warn(`[WiFi] reScanAndLoadWifiList failed (attempt ${scanAttempts}):`, e);
+      
+      if (scanAttempts < maxScanAttempts) {
+        // Wait before retry with exponential backoff
+        const delay = Math.pow(2, scanAttempts) * 1000; // 2s, 4s, 8s
+        console.log(`[WiFi] Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // Last attempt failed, try loadWifiList as fallback
+        console.warn('[WiFi] All reScanAndLoadWifiList attempts failed, trying loadWifiList():', e);
+        try {
+          // @ts-ignore optional on some versions
+          raw = await WifiManager.loadWifiList?.();
+          console.log('[WiFi] loadWifiList fallback successful');
+        } catch (e2) {
+          console.error('[WiFi] loadWifiList fallback also failed:', e2);
+          throw new Error('WiFi scanning failed. Please ensure Location Services are enabled and try again.');
+        }
+      }
     }
   }
 
@@ -70,10 +133,12 @@ export async function scanWifi(): Promise<ScannedNetwork[]> {
         level: typeof n?.level === 'number' ? n.level : undefined,
       }))
       .filter(n => !!n.ssid);
+    
+    console.log(`[WiFi] Successfully scanned ${mapped.length} networks`);
     return Array.isArray(mapped) ? mapped : [];
   } catch (e) {
     console.error('[WiFi] map/filter failed:', e, 'raw:', raw);
-    return [];
+    throw new Error('Failed to process WiFi scan results. Please try again.');
   }
 }
 

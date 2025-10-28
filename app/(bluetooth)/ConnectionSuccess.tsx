@@ -26,8 +26,8 @@ export default function ConnectionSuccessScreen() {
   }, [scaleAnim, opacityAnim]);
 
   const handleContinue = () => {
-    // Navigate to the main app screen, e.g., home or dashboard
-    router.replace('/(tabs)/home'); // Adjust this to your main route
+    // Navigate to WiFi provisioning after BLE connection
+    router.push('/(wifi)/provision');
   };
 
   return (
@@ -44,16 +44,19 @@ export default function ConnectionSuccessScreen() {
           </View>
         </Animated.View>
         <Animated.View style={{ opacity: opacityAnim }}>
-          <Text style={styles.title}>Connected!</Text>
+          <Text style={styles.title}>BLE Connected!</Text>
           <Text style={styles.subtitle}>
-            Your <Text style={{ fontWeight: 'bold' }}>{deviceName || 'SLIMiot Dozemate'}</Text> is ready.
+            Connected to <Text style={{ fontWeight: 'bold' }}>{deviceName || 'SLIMiot Dozemate'}</Text>
+          </Text>
+          <Text style={styles.nextStep}>
+            Next: We'll scan for your device's WiFi access point
           </Text>
         </Animated.View>
       </View>
 
       <Animated.View style={[styles.footer, { opacity: opacityAnim }]}>
         <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
-          <Text style={styles.primaryButtonText}>Continue</Text>
+          <Text style={styles.primaryButtonText}>Setup WiFi</Text>
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -119,5 +122,12 @@ const styles = StyleSheet.create({
     color: '#1D244D',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  nextStep: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
   },
 });

@@ -117,14 +117,44 @@ export default function Step1SelectDeviceApScreen() {
     } catch (e: any) {
       console.error('[WiFi] Scan error:', e);
       const msg = String(e?.message ?? e);
+      
+      // More specific error handling with actionable messages
       if (/expo-location native module not available/i.test(msg)) {
-        Alert.alert('Dev Client Required', 'Rebuild and open the custom dev client: npx expo run:android, then npx expo start --dev-client.');
+        Alert.alert(
+          'Dev Client Required', 
+          'Please rebuild and open the custom dev client:\n\n1. Run: npx expo run:android\n2. Then: npx expo start --dev-client\n\nThis is required for WiFi scanning functionality.',
+          [{ text: 'OK' }]
+        );
       } else if (/Location service is turned off/i.test(msg)) {
-        Alert.alert('Turn On Location', 'Android requires Location services enabled to scan Wi‑Fi.');
+        Alert.alert(
+          'Location Services Required', 
+          'Android requires Location Services to be enabled for WiFi scanning.\n\nPlease:\n1. Go to Settings > Location\n2. Turn on Location Services\n3. Try scanning again',
+          [{ text: 'OK' }]
+        );
       } else if (/permission/i.test(msg)) {
-        Alert.alert('Permission Needed', 'Allow Location permission in App Settings to scan Wi‑Fi.');
+        Alert.alert(
+          'Location Permission Needed', 
+          'The app needs Location permission to scan for WiFi networks.\n\nPlease:\n1. Go to App Settings\n2. Allow Location permission\n3. Try scanning again',
+          [{ text: 'OK' }]
+        );
+      } else if (/WiFi scanning failed/i.test(msg)) {
+        Alert.alert(
+          'WiFi Scan Failed', 
+          'Unable to scan for WiFi networks. This might be due to:\n\n• Location Services being disabled\n• Insufficient permissions\n• Device WiFi being turned off\n\nPlease check these settings and try again.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Retry', onPress: () => setTimeout(doScan, 1000) }
+          ]
+        );
       } else {
-        Alert.alert('Scan Failed', msg);
+        Alert.alert(
+          'Scan Failed', 
+          `WiFi scanning encountered an error:\n\n${msg}\n\nPlease try again or check your device settings.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Retry', onPress: () => setTimeout(doScan, 1000) }
+          ]
+        );
       }
     } finally {
       // Cooldown to avoid back-to-back native races
@@ -134,9 +164,17 @@ export default function Step1SelectDeviceApScreen() {
     }
   };
 
-  // Auto-scan on mount (Android)
+  // Auto-scan on mount (Android) with delay to ensure BLE connection is stable
   useEffect(() => {
-    if (canScan) doScan();
+    if (canScan) {
+      // Add a delay to ensure BLE connection is stable before scanning WiFi
+      const timer = setTimeout(() => {
+        console.log('[WiFi] Starting delayed scan after BLE connection...');
+        doScan();
+      }, 2000); // 2 second delay
+      
+      return () => clearTimeout(timer);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canScan]);
 
@@ -189,10 +227,17 @@ export default function Step1SelectDeviceApScreen() {
         </Text>
 
         <TouchableOpacity style={styles.scanBtn} onPress={doScan} disabled={isScanning || !canScan}>
-          {isScanning ? <ActivityIndicator color="#FFF" /> : <>
-            <Ionicons name="refresh" size={18} color="#FFF" />
-            <Text style={styles.scanText}>Rescan</Text>
-          </>}
+          {isScanning ? (
+            <>
+              <ActivityIndicator color="#FFF" size="small" />
+              <Text style={styles.scanText}>Scanning...</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="refresh" size={18} color="#FFF" />
+              <Text style={styles.scanText}>Rescan</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         {Platform.OS === 'ios' && (
@@ -212,7 +257,20 @@ export default function Step1SelectDeviceApScreen() {
             </TouchableOpacity>
           ))}
           {!isScanning && Array.isArray(networks) && networks.length === 0 && (
-            <Text style={styles.empty}>No networks found. Ensure the device AP is on and nearby.</Text>
+            <View style={styles.emptyContainer}>
+              <Ionicons name="wifi-outline" size={48} color="rgba(255,255,255,0.3)" />
+              <Text style={styles.emptyTitle}>No WiFi Networks Found</Text>
+              <Text style={styles.emptyText}>
+                Make sure your device's WiFi access point is:
+                {'\n'}• Powered on and nearby
+                {'\n'}• Broadcasting its network name
+                {'\n'}• Not hidden
+              </Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={doScan}>
+                <Ionicons name="refresh" size={16} color="#FFF" />
+                <Text style={styles.retryText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </ScrollView>
       </View>
@@ -264,7 +322,11 @@ const styles = StyleSheet.create({
   notice: { color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 10 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', marginBottom: 10 },
   itemText: { flex: 1, color: '#FFF', fontSize: 16 },
-  empty: { color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 30 },
+  emptyContainer: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  emptyTitle: { color: '#FFF', fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  emptyText: { color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(74,144,226,0.3)' },
+  retryText: { color: '#FFF', fontWeight: '600' },
   passwordSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 12 },
   passwordCard: { borderRadius: 20, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
   sheetTitle: { color: '#FFF', fontSize: 14, opacity: 0.8 },
